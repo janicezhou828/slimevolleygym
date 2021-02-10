@@ -764,7 +764,7 @@ class SlimeVolleyEnv(gym.Env):
     assert (int(n) == n) and (n >= 0) and (n < 6)
     return self.action_table[n]
 
-  def step(self, action, otherAction=None):
+  def step(self, action_n=None):
     """
     baseAction is only used if multiagent mode is True
     note: although the action space is multi-binary, float vectors
@@ -772,23 +772,30 @@ class SlimeVolleyEnv(gym.Env):
     """
     done = False
     self.t += 1
+    obs_n = []
+    reward_n = []
+    done_n = []
+    
+    if len(action_n) == 1: 
+      action = action_n[0]
+      obs_left = self.game.agent_left.getObservation()
+      otherAction = self.policy.predict(obs_left)
 
-    if self.otherAction is not None:
-      otherAction = self.otherAction
+    if len(action_n) == 2:
+      action = action_n[0]
+      otherAction = action_n[1]
+    #if self.otherAction is not None:
+    #  otherAction = self.otherAction
 
     if self.atari_mode:
       action = self.discreteToBox(action)
-      if otherAction is not None:
+      if len(action_n) == 2:
         otherAction = self.discreteToBox(otherAction)
 
-    if otherAction is None: # override baseline policy
-      obs = self.game.agent_left.getObservation()
-      otherAction = self.policy.predict(obs)
     self.game.agent_left.setAction(otherAction)
     self.game.agent_right.setAction(action) # external agent is agent_right
 
     reward = self.game.step()
-
     obs = self.getObs()
 
     if self.t >= self.t_limit:
@@ -797,6 +804,10 @@ class SlimeVolleyEnv(gym.Env):
     if self.game.agent_left.life <= 0 or self.game.agent_right.life <= 0:
       done = True
 
+    obs_n.append(obs)
+    reward_n.append(reward)
+    done_n.append(done)
+
     otherObs = None
     if self.multiagent:
       if self.from_pixels:
@@ -804,7 +815,14 @@ class SlimeVolleyEnv(gym.Env):
       else:
         otherObs = self.game.agent_left.getObservation()
 
-    info = {
+    if len(action_n) == 2:
+      reward_op = -1 * reward
+      obs_n.append(otherObs)
+      reward_n.append(reward_op)
+      done_n.append(done)
+
+
+    info_n = {
       'ale.lives': self.game.agent_right.lives(),
       'ale.otherLives': self.game.agent_left.lives(),
       'otherObs': otherObs,
@@ -813,8 +831,8 @@ class SlimeVolleyEnv(gym.Env):
     }
 
     if self.survival_bonus:
-      return obs, reward+0.01, done, info
-    return obs, reward, done, info
+      return obs_n, reward_n, done_n, info_n
+    return obs_n, reward_n, done_n, info_n
 
   def init_game_state(self):
     self.t = 0
@@ -822,7 +840,12 @@ class SlimeVolleyEnv(gym.Env):
 
   def reset(self):
     self.init_game_state()
-    return self.getObs()
+    obs_n = []
+    obs_right = self.game.agent_right.getObservation()
+    obs_left = self.game.agent_left.getObservation()
+    obs_n.append(obs_right)
+    obs_n.append(obs_left)
+    return obs_n
 
   def checkViewer(self):
     # for opengl viewer
