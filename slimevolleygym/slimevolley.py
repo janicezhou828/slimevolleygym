@@ -1063,7 +1063,7 @@ if __name__=="__main__":
   otherManualAction = [0, 0, 0]
   manualMode = False
   otherManualMode = False
-
+ 
   # taken from https://github.com/openai/gym/blob/master/gym/envs/box2d/car_racing.py
   def key_press(k, mod):
     global manualMode, manualAction, otherManualMode, otherManualAction
