@@ -551,6 +551,13 @@ class RL_Agent:
     backward = False
     jump = False
 
+    #action_table = [[0, 0, 0], #0 NOOP
+    #              [1, 0, 0], #1 LEFT (forward)
+    #              [1, 0, 1], #2 UPLEFT (forward jump)
+    #              [0, 0, 1], #3 UP (jump)
+    #              [0, 1, 1], #4 UPRIGHT (backward jump)
+    #              [0, 1, 0]] #5 RIGHT (backward)
+
     if action == 1 or action == 2:
       forward = True
     if action == 4 or action == 5:
@@ -840,7 +847,7 @@ class SlimeVolleyEnv(gym.Env):
     if self.atari_mode:
       self.action_space = spaces.Discrete(6)
     else:
-      self.action_space = spaces.MultiBinary(3)
+      self.action_space = spaces.Discrete(6)
 
     if self.from_pixels:
       setPixelObsMode()
